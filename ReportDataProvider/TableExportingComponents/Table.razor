@@ -1,0 +1,64 @@
+﻿@using System.Text.Json;
+@typeparam TItem
+@attribute [CascadingTypeParameter(nameof(TItem))]
+
+<p>Типа таблица</p>
+
+<ul>
+    @foreach (var item in Data ?? Enumerable.Empty<TItem>())
+    {
+        <li>@JsonSerializer.Serialize(item)</li>
+    }
+</ul>
+<hr />
+
+<p>Таблица на экспорт.</p>
+<p>Тут для примера отрисовывается в HTML, то же самое должно получается "рисоваться" через ClosedXML</p>
+<table>
+    <thead>
+        <tr>
+            @foreach (var export in exportColumns)
+            {
+                <th>@export.ColumnTitle</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Data ?? Enumerable.Empty<TItem>())
+        {
+            <tr>
+                @foreach (var export in exportColumns)
+                {
+                    <td>@export.ValueProvider?.Invoke(item)</td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+<CascadingValue Value="this">
+    @if(ExportOptions is not null)
+    {
+        @ExportOptions
+    }
+</CascadingValue>
+
+@code {
+    [Parameter]
+    public IEnumerable<TItem>? Data { get; set; }
+    [Parameter]
+    public RenderFragment? ExportOptions { get; set; }
+
+    private List<ExportColumn<TItem>> exportColumns = new();
+
+    public void RegisterColumn(ExportColumn<TItem> column)
+    {
+        exportColumns.Add(column);
+        StateHasChanged();
+    }
+    public void UnregisterColumn(ExportColumn<TItem> column)
+    {
+        exportColumns.Remove(column);
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,65 @@
+﻿@page "/"
+@using ReportDataProvider.TableExportingComponents
+
+<PageTitle>Index</PageTitle>
+
+<h1>"Табличка", которая умеет "экспортировать" сущности так, чтобы их можно было оперативно настраивать</h1>
+
+<Table Data="Example">
+    <ExportOptions>
+        @*
+        Эти колонки ничего внутрисебя не рисуют, но при создании и удалении из компонента регистрируют себя в текущей таблице, и удаляются
+        Таким образом таблица получает информацию, как нужно генерить данные
+        Получается, что можно будет минимальными усилиями там, где надо - настроить параметры экспорта
+
+        Более того, можно будет дать пользователю даже возмонжость имзенить порядок, в которм эти колонки будут обходиться, поменять заголовки, или вообще дать ему возможность сделать кастомную колонку. Это уже фантазии.
+
+        Кроме того, можно будет сделать некий отдельный компонент `AsyncDynamicColumns`, который будет в себе содержать логику "доставания" связанной информации, которой нет в исходной модели, например клеймы пользователя те же самые
+
+        Мне такой подход видится как самый гибкий и удобный
+        *@
+        <ExportColumn ColumnTitle="Это число" ValueProvider="d => d.Field" />
+        <ExportColumn ColumnTitle="Состояние" ValueProvider="d => AsRu(d.State)" />
+        <ExportColumn ColumnTitle="Время" ValueProvider="@(d => d.Date.ToString("yyyy"))" />
+
+        @* Тут показано, что не отрисовывающиеся колонки успешно себя удаляют из таблицы, и они на самом деле могут быть довольно удобными *@
+        @if (renderOneMoreCol)
+        {
+            <ExportColumn ColumnTitle="Дополнительная динамическая колонка" ValueProvider="d => d.State == SomeHardToShow.One ? 12 : 14" />
+        }
+
+    </ExportOptions>
+</Table>
+
+<button @onclick="() => renderOneMoreCol = !renderOneMoreCol">
+    @if (renderOneMoreCol)
+    {
+        <span>Убрать колонку</span>
+    }
+    else
+    {
+        <span>Добавить доп колонку</span>
+    }
+</button>
+
+@code {
+    enum SomeHardToShow { One, Two, Three }
+    private record SomeData(int Field, SomeHardToShow State, DateTimeOffset Date);
+
+    private bool renderOneMoreCol;
+
+    private List<SomeData> Example = new List<SomeData>
+    {
+        new (34, SomeHardToShow.Two, DateTimeOffset.UtcNow),
+        new (-486, SomeHardToShow.Three, DateTimeOffset.Now),
+        new (15, SomeHardToShow.One, DateTimeOffset.UtcNow),
+    };
+    private string AsRu(SomeHardToShow value) =>
+        value switch
+        {
+            SomeHardToShow.One => "Первый вариант",
+            SomeHardToShow.Two => "Второй наверно",
+            SomeHardToShow.Three => "И третий, всё это для екселя",
+            _ => "Неизвестный статус"
+        };
+}
